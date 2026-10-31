@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Stillness">
+  <meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <link rel="apple-touch-icon" href="icons/icon-180.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="stylesheet" href="styles.css">
+  <title>Stillness</title>
+</head>
+<body>
+  <main>
+    <!-- MEDITATE -->
+    <section class="view active" id="view-meditate">
+      <header class="large-title"><h1>Meditate</h1></header>
+
+      <label class="hero">
+        <span class="hero-num" id="durNum">20</span>
+        <span class="hero-unit">minutes</span>
+        <select data-key="duration" aria-label="Duration"></select>
+      </label>
+
+      <div class="group">
+        <label class="row">
+          <span class="row-label">Interval Bells</span>
+          <span class="row-value" data-show="interval"></span><span class="chev"></span>
+          <select data-key="interval" aria-label="Interval bells"></select>
+        </label>
+        <label class="row">
+          <span class="row-label">Bell Strikes</span>
+          <span class="row-value" data-show="strikes"></span><span class="chev"></span>
+          <select data-key="strikes" aria-label="Bell strikes at start and end"></select>
+        </label>
+        <label class="row">
+          <span class="row-label">Preparation</span>
+          <span class="row-value" data-show="prep"></span><span class="chev"></span>
+          <select data-key="prep" aria-label="Preparation time"></select>
+        </label>
+        <label class="row">
+          <span class="row-label">Bell Sound</span>
+          <span class="row-value" data-show="bell"></span><span class="chev"></span>
+          <select data-key="bell" aria-label="Bell sound"></select>
+        </label>
+      </div>
+
+      <div class="group">
+        <button class="row" id="musicBtn" type="button">
+          <span class="icon-tile music" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path fill="currentColor" d="M9 18.5a2.5 2.5 0 1 1-2-2.45V6.2c0-.5.36-.92.85-.99l10-1.5A1 1 0 0 1 19 4.7v10.8a2.5 2.5 0 1 1-2-2.45V8.1l-8 1.2v9.2z"/></svg>
+          </span>
+          <span class="row-label">Apple Music</span>
+          <span class="row-value" id="musicVal">Open</span><span class="chev"></span>
+        </button>
+      </div>
+      <p class="footnote" id="musicHint">Start a playlist in Music, then come back and begin. Bells play over your music.</p>
+
+      <div class="cta">
+        <button class="btn-primary" id="beginBtn" type="button">Begin</button>
+      </div>
+    </section>
+
+    <!-- JOURNAL -->
+    <section class="view" id="view-journal">
+      <header class="large-title"><h1>Journal</h1></header>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">This Week</span><span class="stat-num" id="stWeek">0</span><span class="stat-unit">min</span></div>
+        <div class="stat"><span class="stat-label">Streak</span><span class="stat-num" id="stStreak">0</span><span class="stat-unit" id="stStreakUnit">days</span></div>
+        <div class="stat"><span class="stat-label">Total</span><span class="stat-num" id="stTotal">0</span><span class="stat-unit" id="stTotalUnit">min</span></div>
+      </div>
+      <div id="journalList"></div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="view" id="view-settings">
+      <header class="large-title"><h1>Settings</h1></header>
+
+      <h2 class="group-header">Sound</h2>
+      <div class="group">
+        <label class="row">
+          <span class="row-label">Bell Sound</span>
+          <span class="row-value" data-show="bell"></span><span class="chev"></span>
+          <select data-key="bell" aria-label="Bell sound"></select>
+        </label>
+        <button class="row" type="button" id="previewBtn"><span class="row-label tint">Play Bell</span></button>
+        <label class="row">
+          <span class="row-label">Mix with Apple Music</span>
+          <input type="checkbox" class="switch" data-toggle="mix">
+        </label>
+      </div>
+      <p class="footnote">When on, bells play over your music without pausing it. Bells follow the Ring/Silent switch in this mode. Turn off to always hear bells (this pauses other audio).</p>
+
+      <h2 class="group-header">Apple Music</h2>
+      <div class="group">
+        <label class="row field">
+          <span class="row-label">Playlist</span>
+          <input type="url" id="playlistInput" placeholder="Paste link" autocomplete="off" autocapitalize="off" spellcheck="false">
+        </label>
+      </div>
+      <p class="footnote">Optional. In Music, open a playlist › ••• › Share › Copy Link, then paste it here. The Apple Music button will open it directly.</p>
+
+      <h2 class="group-header">Apple Health</h2>
+      <div class="group">
+        <label class="row">
+          <span class="row-label">Save Mindful Minutes</span>
+          <input type="checkbox" class="switch" data-toggle="health">
+        </label>
+        <label class="row field">
+          <span class="row-label">Shortcut</span>
+          <input type="text" id="shortcutInput" autocomplete="off" autocapitalize="words" spellcheck="false">
+        </label>
+        <button class="row" type="button" id="healthHelpBtn"><span class="row-label tint">How to Set Up</span><span class="chev"></span></button>
+      </div>
+      <p class="footnote">Web apps can’t write to Health directly, so Stillness hands each session to a one-time Shortcut you create. It then appears in Health › Mindfulness.</p>
+
+      <h2 class="group-header">Display</h2>
+      <div class="group">
+        <label class="row">
+          <span class="row-label">Keep Screen Awake</span>
+          <input type="checkbox" class="switch" data-toggle="wake">
+        </label>
+      </div>
+      <p class="footnote">iPhone pauses web apps when locked. Keeping the screen on ensures every bell rings on time. The timer still keeps correct time if you lock it.</p>
+
+      <h2 class="group-header">Data</h2>
+      <div class="group">
+        <button class="row" type="button" id="exportBtn"><span class="row-label tint">Export Journal (CSV)</span></button>
+        <button class="row" type="button" id="clearBtn"><span class="row-label destructive">Delete All Sessions</span></button>
+      </div>
+      <p class="footnote">Your journal is stored only on this iPhone. No accounts, no sharing.</p>
+    </section>
+  </main>
+
+  <!-- TAB BAR -->
+  <nav class="tabbar" aria-label="Tabs">
+    <button class="tab active" data-tab="meditate" type="button">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><circle cx="14" cy="15" r="10" fill="none" stroke="currentColor" stroke-width="2"/><path d="M14 9.5V15l3.5 2.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M11 2.8h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Meditate</span>
+    </button>
+    <button class="tab" data-tab="journal" type="button">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><rect x="5" y="3.5" width="18" height="21" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5h9M9.5 14h9M9.5 18.5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Journal</span>
+    </button>
+    <button class="tab" data-tab="settings" type="button">
+      <svg viewBox="0 0 28 28" aria-hidden="true"><path d="M5 8h18M5 14h18M5 20h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="8" r="2.6" fill="var(--tabbar-solid)" stroke="currentColor" stroke-width="2"/><circle cx="18" cy="14" r="2.6" fill="var(--tabbar-solid)" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="20" r="2.6" fill="var(--tabbar-solid)" stroke="currentColor" stroke-width="2"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <!-- ACTIVE SESSION -->
+  <div class="session" id="session" hidden>
+    <div class="session-inner">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
+          <circle class="ring-track" cx="150" cy="150" r="138"/>
+          <circle class="ring-progress" id="ringProgress" cx="150" cy="150" r="138"/>
+        </svg>
+        <div class="ring-center">
+          <div class="session-time" id="sessTime">20:00</div>
+          <div class="session-sub" id="sessSub"></div>
+        </div>
+      </div>
+      <div class="session-controls">
+        <button class="round round-grey" id="endBtn" type="button">End</button>
+        <button class="round round-tint" id="pauseBtn" type="button">Pause</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPLETION -->
+  <div class="modal" id="complete" hidden>
+    <div class="modal-card">
+      <div class="done-mark" aria-hidden="true">
+        <svg viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="none" stroke="currentColor" stroke-width="2.5"/><path d="M16 27l7 7 13-15" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <h2 class="done-title" id="doneTitle">Session Complete</h2>
+      <p class="done-sub" id="doneSub"></p>
+      <div class="group flush">
+        <label class="row field note">
+          <textarea id="noteInput" rows="3" placeholder="Add a note (optional)"></textarea>
+        </label>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="doneHealthBtn" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.3C.9 8.2 3 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.1 1.8-1.9 3.3-3.1 5.4-3.1 3.6 0 5.7 3.7 4.2 7.2C19.5 16.4 12 21 12 21z"/></svg>
+          Save to Apple Health
+        </button>
+        <button class="btn-primary" id="doneBtn" type="button">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION SHEET -->
+  <div class="sheet-backdrop" id="sheet" hidden>
+    <div class="sheet" role="dialog" aria-modal="true">
+      <div class="sheet-group">
+        <div class="sheet-title" id="sheetTitle"></div>
+        <div id="sheetActions"></div>
+      </div>
+      <button class="sheet-cancel" id="sheetCancel" type="button">Cancel</button>
+    </div>
+  </div>
+
+  <!-- HEALTH HELP -->
+  <div class="modal" id="healthHelp" hidden>
+    <div class="modal-card help">
+      <h2 class="done-title">Connect Apple Health</h2>
+      <p class="done-sub">A one-time setup in the Shortcuts app, about two minutes.</p>
+      <ol class="steps">
+        <li>Open <b>Shortcuts</b> and tap <b>+</b> to make a new shortcut.</li>
+        <li>Name it exactly <b id="helpName">Log Mindful Minutes</b>.</li>
+        <li>Add the action <b>Get Numbers from Input</b> (input: Shortcut Input).</li>
+        <li>Add <b>Log Health Sample</b>. Set Type to <b>Mindful Minutes</b>.</li>
+        <li>Set the duration / value to <b>Numbers</b> (minutes). If it asks for Start and End dates instead, set End to <b>Current Date</b> and Start to an <b>Adjust Date</b> action that subtracts <b>Numbers</b> minutes from Current Date.</li>
+        <li>Tap the shortcut’s <b>ⓘ</b> and turn off <b>Show When Run</b> if offered. Run it once to grant Health access.</li>
+      </ol>
+      <p class="done-sub small">After each session, tap <b>Save to Apple Health</b>. Shortcuts opens for a moment, logs the minutes, and you can swipe back.</p>
+      <div class="modal-actions">
+        <button class="btn-primary" id="helpDoneBtn" type="button">Got It</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
