@@ -307,3 +307,41 @@ main {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* Mixer */
+.row.vol { flex-direction: column; align-items: stretch; gap: 8px; padding: 11px 16px 12px; }
+.row.vol:active { background: transparent; }
+.vol-top { display: flex; align-items: center; gap: 12px; }
+.vol-top .row-value { font-variant-numeric: tabular-nums; }
+.vol-ctl { display: flex; align-items: center; gap: 8px; }
+.vol-ctl .spk { width: 20px; height: 20px; flex: none; color: var(--label2); }
+.vol-play { width: 32px; height: 32px; flex: none; margin-left: 4px; color: var(--tint); display: grid; place-items: center; border-radius: 50%; }
+.vol-play svg { width: 30px; height: 30px; }
+.vol-play:active { opacity: .6; }
+input[type=range] {
+  --p: 50%;
+  flex: 1; min-width: 0; height: 28px; margin: 0; background: transparent;
+  -webkit-appearance: none; appearance: none; cursor: pointer;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  height: 4px; border-radius: 2px;
+  background: linear-gradient(to right, var(--tint) var(--p), var(--fill-press) var(--p));
+}
+input[type=range]::-moz-range-track { height: 4px; border-radius: 2px; background: var(--fill-press); }
+input[type=range]::-moz-range-progress { height: 4px; border-radius: 2px; background: var(--tint); }
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; margin-top: -11px; border-radius: 50%; background: #fff; border: 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,.2), 0 0 0 .5px rgba(0,0,0,.06);
+}
+input[type=range]::-moz-range-thumb { width: 26px; height: 26px; border-radius: 50%; background: #fff; border: 0; box-shadow: 0 2px 6px rgba(0,0,0,.2); }
+
+/* Shown in a session only if iOS has blocked sound */
+.sound-banner {
+  position: absolute; top: calc(env(safe-area-inset-top) + 16px); left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 8px; white-space: nowrap;
+  padding: 10px 16px; border-radius: 22px;
+  background: rgba(69, 211, 180, .16); color: #45D3B4; font-size: 15px; font-weight: 500;
+}
+.sound-banner svg { width: 18px; height: 18px; }
+.sound-banner:active { opacity: .7; }

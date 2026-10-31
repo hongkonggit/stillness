@@ -9,7 +9,7 @@ const store = {
 const K = { settings: 'stillness.settings', sessions: 'stillness.sessions', run: 'stillness.run' };
 
 const DEFAULTS = {
-  duration: 20, interval: 0, strikes: 3, prep: 10, bell: 'bowl', intervalBell: 'rin',
+  duration: 20, interval: 0, strikes: 3, prep: 10, bell: 'bowl', intervalBell: 'rin', bellVol: 80, intervalVol: 65,
   mix: true, wake: true, health: false, shortcut: 'Log Mindful Minutes', playlist: '',
 };
 let settings = Object.assign({}, DEFAULTS, store.get(K.settings, {}));
@@ -24,17 +24,22 @@ const $$ = (s, el = document) => [...el.querySelectorAll(s)];
    Each partial: [frequency ratio, amplitude, decay seconds]. A slightly
    detuned twin of each partial gives the natural "beating" shimmer. */
 const BELLS = {
-  bowl:    { name: 'Singing Bowl', f: 196, gain: .32, beat: .7, gap: 5,
-             partials: [[1, 1, 11], [2.76, .42, 7], [5.40, .18, 4.5], [8.93, .07, 2.6]], mallet: .05 },
-  temple:  { name: 'Temple Bell',  f: 98,  gain: .30, beat: .35, gap: 7,
-             partials: [[.5, .45, 14], [1, 1, 10], [1.19, .55, 6], [1.5, .3, 5], [2, .5, 4], [2.52, .22, 3], [3.01, .12, 2.2]], mallet: .1 },
-  rin:     { name: 'Rin Gong',     f: 587, gain: .26, beat: 1.4, gap: 4.5,
-             partials: [[1, 1, 8], [2.83, .35, 4.5], [5.42, .14, 2.6], [8.9, .05, 1.4]], mallet: .04 },
-  tingsha: { name: 'Tingsha',      f: 2093, gain: .17, beat: 4, gap: 3.5,
-             partials: [[1, 1, 4.5], [1.006, .8, 4.2], [2.41, .22, 2], [3.93, .08, 1]], mallet: .02 },
+  // Fundamentals kept high enough, and upper partials strong enough, to carry on an iPhone speaker.
+  bowl:    { name: 'Singing Bowl', f: 220, gain: 1, beat: .7, gap: 5,
+             partials: [[1, 1, 11], [2.76, .62, 8], [5.40, .32, 5], [8.93, .12, 3]], mallet: .06 },
+  temple:  { name: 'Temple Bell',  f: 131, gain: 1, beat: .35, gap: 7,
+             partials: [[.5, .3, 13], [1, .8, 10], [1.19, .55, 7], [1.5, .4, 6], [2, .7, 5.5], [2.52, .42, 4], [3.01, .3, 3], [4.2, .22, 2.4], [5.4, .12, 1.8]], mallet: .1 },
+  rin:     { name: 'Rin Gong',     f: 587, gain: 1, beat: 1.4, gap: 4.5,
+             partials: [[1, 1, 8], [2.83, .4, 5], [5.42, .16, 2.8], [8.9, .06, 1.5]], mallet: .05 },
+  tingsha: { name: 'Tingsha',      f: 2093, gain: 1, beat: 4, gap: 3.5,
+             partials: [[1, 1, 4.5], [1.006, .8, 4.2], [2.41, .22, 2], [3.93, .08, 1]], mallet: .03 },
 };
+// Per-bell level so every sound peaks at the same loudness (measured offline).
+const BELL_NORM = { bowl: .367, temple: .412, rin: .272, tingsha: .385 };
+// Slider 0–100 → gain. 75 ≈ comfortable; 100 pushes into the limiter for extra loudness.
+const volGain = v => 2 * Math.pow(Math.max(0, Math.min(100, v)) / 100, 2);
 
-let ctx = null, master = null;
+let ctx = null, master = null, keepAlive = null;
 
 function setAudioSession() {
   // Safari 16.4+: 'ambient' mixes with Apple Music instead of pausing it.
@@ -48,21 +53,46 @@ function ensureAudio() {
     const AC = window.AudioContext || window.webkitAudioContext;
     ctx = new AC();
     master = ctx.createGain();
-    master.gain.value = .9;
-    const comp = ctx.createDynamicsCompressor();
-    comp.threshold.value = -14; comp.ratio.value = 4;
-    master.connect(comp); comp.connect(ctx.destination);
+    master.gain.value = 1;
+    // Brick-wall limiter so loud settings never distort.
+    const lim = ctx.createDynamicsCompressor();
+    lim.threshold.value = -4.5; lim.knee.value = 0; lim.ratio.value = 20;
+    lim.attack.value = .002; lim.release.value = .25;
+    master.connect(lim); lim.connect(ctx.destination);
   }
   if (ctx.state !== 'running') ctx.resume().catch(() => {});
   return ctx;
 }
-// iOS only lets audio start from a touch; resume on any touch just in case.
+// Call only inside a tap. iOS fully unlocks audio once a sound actually starts during a gesture.
+function unlockAudio() {
+  ensureAudio();
+  try {
+    const s = ctx.createBufferSource();
+    s.buffer = ctx.createBuffer(1, 1, ctx.sampleRate);
+    s.connect(ctx.destination); s.start(0);
+  } catch {}
+  return ctx.resume().catch(() => {});
+}
+// An inaudible loop (-80 dB) keeps iOS from putting the audio to sleep between bells.
+function startKeepAlive() {
+  if (!ctx || keepAlive) return;
+  const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * 1e-4;
+  keepAlive = ctx.createBufferSource();
+  keepAlive.buffer = buf; keepAlive.loop = true;
+  keepAlive.connect(ctx.destination); keepAlive.start();
+}
+function stopKeepAlive() { try { keepAlive && keepAlive.stop(); } catch {} keepAlive = null; }
+const audioReady = () => !!ctx && ctx.state === 'running';
+
+// Any tap also revives the audio if iOS interrupted it.
 ['touchend', 'click'].forEach(ev => document.addEventListener(ev, () => { if (ctx && ctx.state !== 'running') ctx.resume().catch(() => {}); }, { passive: true }));
 
-function strike(type, t, soft = false) {
+function strike(type, t, level) {
   const b = BELLS[type] || BELLS.bowl;
   const out = ctx.createGain();
-  out.gain.value = b.gain * (soft ? .55 : 1);
+  out.gain.value = b.gain * (BELL_NORM[type] || 1) * level;
   out.connect(master);
   for (const [r, a, d] of b.partials) {
     for (let k = 0; k < 2; k++) {
@@ -85,15 +115,23 @@ function strike(type, t, soft = false) {
   for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3);
   const n = ctx.createBufferSource(); n.buffer = buf;
   const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = Math.min(b.f * 6, 9000); bp.Q.value = 1.2;
-  const ng = ctx.createGain(); ng.gain.value = b.mallet * (soft ? .5 : 1);
+  const ng = ctx.createGain(); ng.gain.value = b.mallet;
   n.connect(bp); bp.connect(ng); ng.connect(out); n.start(t);
 }
-function ringBells(count, soft = false, type = settings.bell) {
-  if (!ensureAudio()) return;
+// kind: 'main' (start & end) or 'interval'. Volume is read live from Settings.
+function ringBells(count, kind = 'main', type, fromTap = false) {
+  ensureAudio();
+  // From a timer, only schedule if audio is truly running; otherwise the bell would play late.
+  if (!fromTap && !audioReady()) { ctx.resume().catch(() => {}); return false; }
+  type = type || (kind === 'interval' ? settings.intervalBell : settings.bell);
+  const level = volGain(kind === 'interval' ? settings.intervalVol : settings.bellVol);
+  if (level <= 0) return true;
   const gap = (BELLS[type] || BELLS.bowl).gap;
   const t0 = ctx.currentTime + .06;
-  for (let i = 0; i < count; i++) strike(type, t0 + i * gap, soft);
+  for (let i = 0; i < count; i++) strike(type, t0 + i * gap, level);
+  return true;
 }
+const previewBell = kind => { unlockAudio(); ringBells(1, kind, null, true); };
 
 /* ---------- Options & bindings ---------- */
 const OPTIONS = {
@@ -114,8 +152,8 @@ function initControls() {
     sel.addEventListener('change', () => {
       settings[key] = typeof DEFAULTS[key] === 'number' ? Number(sel.value) : sel.value;
       saveSettings(); refresh();
-      if (key === 'bell') ringBells(1);
-      if (key === 'intervalBell') ringBells(1, true, settings.intervalBell);
+      if (key === 'bell') previewBell('main');
+      if (key === 'intervalBell') previewBell('interval');
     });
   }
   for (const sw of $$('input[data-toggle]')) {
@@ -154,7 +192,7 @@ $$('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)
 
 /* ---------- Apple Music ---------- */
 $('#musicBtn').addEventListener('click', () => {
-  ensureAudio(); // unlock audio while we have a touch
+  unlockAudio(); // unlock audio while we have a touch
   const link = settings.playlist;
   // music:// opens the Music app directly instead of a Safari page.
   location.href = /^https?:\/\/(geo\.)?music\.apple\.com\//i.test(link) ? link.replace(/^https?:/i, 'music:') : 'music://';
@@ -178,8 +216,15 @@ function elapsed(at = Date.now()) {
   return Math.max(0, (ref - run.medStart - run.pausedTotal) / 1000);
 }
 
-function begin() {
-  ensureAudio();
+let starting = false;
+async function begin() {
+  if (starting || run) return;
+  starting = true;
+  // Wake the audio inside this tap and keep it awake for the whole session.
+  const resumed = unlockAudio();
+  startKeepAlive();
+  await Promise.race([resumed, new Promise(r => setTimeout(r, 1500))]);
+  starting = false;
   const t = Date.now();
   run = {
     id: t.toString(36),
@@ -201,6 +246,7 @@ function openSession() {
   $('#session').hidden = false;
   document.body.style.overflow = 'hidden';
   requestWake();
+  startKeepAlive();
   clearInterval(loop);
   loop = setInterval(tick, 250);
 }
@@ -209,15 +255,28 @@ function closeSession() {
   $('#session').hidden = true;
   document.body.style.overflow = '';
   releaseWake();
+  pendingBell = null;
+  // Let the closing bells ring out before releasing the keep-alive.
+  setTimeout(() => { if (!run) stopKeepAlive(); }, 30000);
+}
+
+// If iOS briefly blocks audio when a bell is due, retry for a few seconds instead of dropping it.
+let pendingBell = null;
+function ringOrQueue(count, kind, type) {
+  if (!ringBells(count, kind, type)) pendingBell = { count, kind, type, until: Date.now() + 6000 };
 }
 
 function tick() {
   if (!run) return;
   const now = Date.now();
+  if (pendingBell) {
+    if (now > pendingBell.until) pendingBell = null;
+    else if (audioReady() && ringBells(pendingBell.count, pendingBell.kind, pendingBell.type)) pendingBell = null;
+  }
   if (!run.startRung) {
     if (now < run.medStart) return renderSession(now);
     run.startRung = true; persistRun();
-    if (now - run.medStart < 5000) ringBells(run.strikes, false, run.bell);
+    if (now - run.medStart < 5000) ringOrQueue(run.strikes, 'main', run.bell);
   }
   const e = elapsed(now);
   if (e >= run.planned) return finish(true);
@@ -226,7 +285,7 @@ function tick() {
     if (idx > run.lastInterval) {
       run.lastInterval = idx; persistRun();
       // Skip bells missed while the phone was locked, and any that collide with the closing bells.
-      if (e - idx * run.interval < 5 && run.planned - e > 4) ringBells(1, true, run.intervalBell || run.bell);
+      if (e - idx * run.interval < 5 && run.planned - e > 4) ringOrQueue(1, 'interval', run.intervalBell || run.bell);
     }
   }
   renderSession(now);
@@ -244,6 +303,7 @@ const CIRC = 2 * Math.PI * 138;
 function renderSession(now = Date.now()) {
   const ring = $('#ringProgress'), time = $('#sessTime'), sub = $('#sessSub'), pause = $('#pauseBtn');
   const sess = $('#session');
+  $('#soundBanner').hidden = audioReady();
   if (!run.startRung) {
     const left = (run.medStart - now) / 1000, total = settings.prep || 1;
     time.textContent = Math.ceil(left);
@@ -289,7 +349,7 @@ $('#endBtn').addEventListener('click', () => {
 function finish(completed, { save = true, silent = false } = {}) {
   const e = completed ? run.planned : elapsed();
   const end = completed ? run.medStart + run.pausedTotal + run.planned * 1000 : (run.pausedAt || Date.now());
-  if (completed && !silent) ringBells(run.strikes, false, run.bell);
+  if (completed && !silent) ringBells(run.strikes, 'main', run.bell);
   let entry = null;
   if (save && e >= 60) {
     entry = { id: run.id, start: run.medStart, end, planned: run.planned, actual: Math.round(e), completed, health: false, note: '' };
@@ -451,8 +511,24 @@ $('#sheetCancel').addEventListener('click', closeSheet);
 $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeSheet(); });
 
 /* ---------- Settings actions ---------- */
-$('#previewBtn').addEventListener('click', () => ringBells(1));
-$('#previewIntervalBtn').addEventListener('click', () => ringBells(1, true, settings.intervalBell));
+// Volume mixer
+function paintRange(el) { el.style.setProperty('--p', `${el.value}%`); }
+for (const r of $$('input[data-range]')) {
+  const key = r.dataset.range;
+  r.value = settings[key]; paintRange(r);
+  r.addEventListener('input', () => {
+    settings[key] = Number(r.value); paintRange(r);
+    for (const el of $$(`[data-vol-show="${key}"]`)) el.textContent = `${r.value}%`;
+  });
+  r.addEventListener('change', () => { saveSettings(); previewBell(key === 'intervalVol' ? 'interval' : 'main'); });
+}
+for (const el of $$('[data-vol-show]')) el.textContent = `${settings[el.dataset.volShow]}%`;
+$$('[data-play]').forEach(b => b.addEventListener('click', () => previewBell(b.dataset.play)));
+
+// Shown during a session only if iOS has blocked sound; one tap restores it.
+$('#soundBanner').addEventListener('click', async () => {
+  await unlockAudio(); startKeepAlive(); if (run) renderSession();
+});
 $('#healthHelpBtn').addEventListener('click', () => { $('#healthHelp').hidden = false; });
 $('#helpDoneBtn').addEventListener('click', () => { $('#healthHelp').hidden = true; });
 

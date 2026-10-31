@@ -86,26 +86,49 @@
     <section class="view" id="view-settings">
       <header class="large-title"><h1>Settings</h1></header>
 
-      <h2 class="group-header">Sound</h2>
+      <h2 class="group-header">Sounds</h2>
       <div class="group">
         <label class="row">
           <span class="row-label">Start &amp; End Bell</span>
           <span class="row-value" data-show="bell"></span><span class="chev"></span>
           <select data-key="bell" aria-label="Opening and closing bell sound"></select>
         </label>
-        <button class="row" type="button" id="previewBtn"><span class="row-label tint">Play Start &amp; End Bell</span></button>
         <label class="row">
           <span class="row-label">Interval Bell</span>
           <span class="row-value" data-show="intervalBell"></span><span class="chev"></span>
           <select data-key="intervalBell" aria-label="Interval bell sound"></select>
         </label>
-        <button class="row" type="button" id="previewIntervalBtn"><span class="row-label tint">Play Interval Bell</span></button>
+      </div>
+
+      <h2 class="group-header">Mixer</h2>
+      <div class="group">
+        <div class="row vol">
+          <div class="vol-top"><span class="row-label">Start &amp; End Bell</span><span class="row-value" data-vol-show="bellVol"></span></div>
+          <div class="vol-ctl">
+            <svg class="spk" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/></svg>
+            <input type="range" min="0" max="100" step="1" data-range="bellVol" aria-label="Start and end bell volume">
+            <svg class="spk" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9.5h3.2L10.5 6v12l-4.3-3.5H3z"/><path d="M13.5 9.2a3.8 3.8 0 0 1 0 5.6M16 6.8a7.2 7.2 0 0 1 0 10.4M18.5 4.4a10.6 10.6 0 0 1 0 15.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <button class="vol-play" type="button" data-play="main" aria-label="Play Start and End Bell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".14"/><path fill="currentColor" d="M10 7.8v8.4l6.6-4.2z"/></svg></button>
+          </div>
+        </div>
+        <div class="row vol">
+          <div class="vol-top"><span class="row-label">Interval Bell</span><span class="row-value" data-vol-show="intervalVol"></span></div>
+          <div class="vol-ctl">
+            <svg class="spk" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M4 9.5h3.2L11.5 6v12l-4.3-3.5H4z"/></svg>
+            <input type="range" min="0" max="100" step="1" data-range="intervalVol" aria-label="Interval bell volume">
+            <svg class="spk" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9.5h3.2L10.5 6v12l-4.3-3.5H3z"/><path d="M13.5 9.2a3.8 3.8 0 0 1 0 5.6M16 6.8a7.2 7.2 0 0 1 0 10.4M18.5 4.4a10.6 10.6 0 0 1 0 15.2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+            <button class="vol-play" type="button" data-play="interval" aria-label="Play Interval Bell"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".14"/><path fill="currentColor" d="M10 7.8v8.4l6.6-4.2z"/></svg></button>
+          </div>
+        </div>
+        <div class="row vol">
+          <div class="vol-top"><span class="row-label">Apple Music</span><span class="row-value">iPhone volume buttons</span></div>
+        </div>
         <label class="row">
           <span class="row-label">Mix with Apple Music</span>
           <input type="checkbox" class="switch" data-toggle="mix">
         </label>
       </div>
-      <p class="footnote">When on, bells play over your music without pausing it. Bells follow the Ring/Silent switch in this mode. Turn off to always hear bells (this pauses other audio).</p>
+      <p class="footnote">iPhone doesn’t let other apps change Apple Music’s volume. Set your music level with the side volume buttons, then use these sliders to balance the bells against it. With Mix on, bells play over your music but are muted when iPhone is on Silent. Turn Mix off to always hear the bells (this pauses your music).</p>
 
       <h2 class="group-header">Apple Music</h2>
       <div class="group">
@@ -166,6 +189,10 @@
 
   <!-- ACTIVE SESSION -->
   <div class="session" id="session" hidden>
+    <button class="sound-banner" id="soundBanner" type="button" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 9.5h3.2L10.5 6v12l-4.3-3.5H3z"/><path d="M14 9l6 6M20 9l-6 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      Tap to turn the bells back on
+    </button>
     <div class="session-inner">
       <div class="ring-wrap">
         <svg class="ring" viewBox="0 0 300 300" aria-hidden="true">
