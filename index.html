@@ -44,9 +44,14 @@
           <select data-key="prep" aria-label="Preparation time"></select>
         </label>
         <label class="row">
-          <span class="row-label">Bell Sound</span>
+          <span class="row-label">Start &amp; End Sound</span>
           <span class="row-value" data-show="bell"></span><span class="chev"></span>
-          <select data-key="bell" aria-label="Bell sound"></select>
+          <select data-key="bell" aria-label="Opening and closing bell sound"></select>
+        </label>
+        <label class="row" id="intervalSoundRow">
+          <span class="row-label">Interval Sound</span>
+          <span class="row-value" data-show="intervalBell"></span><span class="chev"></span>
+          <select data-key="intervalBell" aria-label="Interval bell sound"></select>
         </label>
       </div>
 
@@ -84,11 +89,17 @@
       <h2 class="group-header">Sound</h2>
       <div class="group">
         <label class="row">
-          <span class="row-label">Bell Sound</span>
+          <span class="row-label">Start &amp; End Bell</span>
           <span class="row-value" data-show="bell"></span><span class="chev"></span>
-          <select data-key="bell" aria-label="Bell sound"></select>
+          <select data-key="bell" aria-label="Opening and closing bell sound"></select>
         </label>
-        <button class="row" type="button" id="previewBtn"><span class="row-label tint">Play Bell</span></button>
+        <button class="row" type="button" id="previewBtn"><span class="row-label tint">Play Start &amp; End Bell</span></button>
+        <label class="row">
+          <span class="row-label">Interval Bell</span>
+          <span class="row-value" data-show="intervalBell"></span><span class="chev"></span>
+          <select data-key="intervalBell" aria-label="Interval bell sound"></select>
+        </label>
+        <button class="row" type="button" id="previewIntervalBtn"><span class="row-label tint">Play Interval Bell</span></button>
         <label class="row">
           <span class="row-label">Mix with Apple Music</span>
           <input type="checkbox" class="switch" data-toggle="mix">

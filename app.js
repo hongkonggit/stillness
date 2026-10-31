@@ -9,7 +9,7 @@ const store = {
 const K = { settings: 'stillness.settings', sessions: 'stillness.sessions', run: 'stillness.run' };
 
 const DEFAULTS = {
-  duration: 20, interval: 0, strikes: 3, prep: 10, bell: 'bowl',
+  duration: 20, interval: 0, strikes: 3, prep: 10, bell: 'bowl', intervalBell: 'rin',
   mix: true, wake: true, health: false, shortcut: 'Log Mindful Minutes', playlist: '',
 };
 let settings = Object.assign({}, DEFAULTS, store.get(K.settings, {}));
@@ -103,6 +103,7 @@ const OPTIONS = {
   prep: [[0, 'None'], [5, '5 sec'], [10, '10 sec'], [15, '15 sec'], [30, '30 sec']],
   bell: Object.entries(BELLS).map(([k, b]) => [k, b.name]),
 };
+OPTIONS.intervalBell = OPTIONS.bell;
 const labelFor = key => (OPTIONS[key].find(([v]) => String(v) === String(settings[key])) || [, ''])[1];
 
 function initControls() {
@@ -114,6 +115,7 @@ function initControls() {
       settings[key] = typeof DEFAULTS[key] === 'number' ? Number(sel.value) : sel.value;
       saveSettings(); refresh();
       if (key === 'bell') ringBells(1);
+      if (key === 'intervalBell') ringBells(1, true, settings.intervalBell);
     });
   }
   for (const sw of $$('input[data-toggle]')) {
@@ -136,6 +138,7 @@ function refresh() {
   $('#durNum').textContent = settings.duration;
   for (const el of $$('[data-show]')) el.textContent = labelFor(el.dataset.show);
   for (const sel of $$('select[data-key]')) sel.value = settings[sel.dataset.key];
+  $('#intervalSoundRow').hidden = !settings.interval;
   $('#musicVal').textContent = settings.playlist ? 'My Playlist' : 'Open';
   $('#helpName').textContent = settings.shortcut;
 }
@@ -185,6 +188,7 @@ function begin() {
     interval: settings.interval * 60,
     strikes: settings.strikes,
     bell: settings.bell,
+    intervalBell: settings.intervalBell,
     pausedAt: null, pausedTotal: 0,
     startRung: false, lastInterval: 0,
   };
@@ -222,7 +226,7 @@ function tick() {
     if (idx > run.lastInterval) {
       run.lastInterval = idx; persistRun();
       // Skip bells missed while the phone was locked, and any that collide with the closing bells.
-      if (e - idx * run.interval < 5 && run.planned - e > 4) ringBells(1, true, run.bell);
+      if (e - idx * run.interval < 5 && run.planned - e > 4) ringBells(1, true, run.intervalBell || run.bell);
     }
   }
   renderSession(now);
@@ -448,6 +452,7 @@ $('#sheet').addEventListener('click', e => { if (e.target.id === 'sheet') closeS
 
 /* ---------- Settings actions ---------- */
 $('#previewBtn').addEventListener('click', () => ringBells(1));
+$('#previewIntervalBtn').addEventListener('click', () => ringBells(1, true, settings.intervalBell));
 $('#healthHelpBtn').addEventListener('click', () => { $('#healthHelp').hidden = false; });
 $('#helpDoneBtn').addEventListener('click', () => { $('#healthHelp').hidden = true; });
 
